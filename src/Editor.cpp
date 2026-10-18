@@ -206,44 +206,59 @@ void Editor::HandleCommandLine(KeyEvent key) {
     }
 
 void Editor::ExecuteCommandLine() {
-    //1. 保存去掉首尾空白后的命令(用trim),再退出命令行模式,因为退出会清空command_
+    // 1. 保存去掉首尾空白后的命令(用trim)
     const std::string trimmed_command = Trim(command_);
-    //2. 空命令直接返回,否则按第一个空格或Tab拆成命令名和参数
+    
+    // 2. 空命令直接返回
     if (trimmed_command.empty()) {
         LeaveCommandLine();
         return;
     }
-    //3. 在Basic部分中你会发现最后命令就一个命令名,直接根据要求的命令名执行
-    const std::size_t separator = trimmed_command.find_first_of(" \t");
-    const std::string command_name = (separator == std::string::npos) ? trimmed_command : trimmed_command.substr(0, separator);//NPOS:如果没有空格或Tab,则整个命令就是命令名;否则命令名是第一个空格或Tab前的内容
-    const std::string command_argument = (separator == std::string::npos) ? "" : trimmed_command.substr(separator + 1);//命令参数是第一个空格或Tab之后
 
+    // 3. 拆分命令名和参数
+    const std::size_t separator = trimmed_command.find_first_of(" \t");
+    const std::string command_name = (separator == std::string::npos) ? trimmed_command : trimmed_command.substr(0, separator);
+    const std::string command_argument = (separator == std::string::npos) ? "" : trimmed_command.substr(separator + 1);
+
+    // 4. 执行命令
     if (command_name == "w") {
         if (command_argument.empty()) {
             SaveBuffer();
         } else {
             SaveBuffer(std::filesystem::path(command_argument));
-            return;
         }
-    } else if (command_name == "q" || command_name == "quit") {
-        //退出编辑器,若文件被修改过则提示错误
+        LeaveCommandLine(); //必须恢复模式，否则卡死在命令行
+        return;
+    } 
+    
+    if (command_name == "q" || command_name == "quit") {
         if (buffer_.IsModified()) {
             message_ = "File has changed. Use :wq to save and quit.";
-        }else{
-            running_ = false;
-        }
-    } else if (command_name == "q!" || command_name == "quit!") {
-        //强制退出编辑器,不检查文件是否被修改
-        running_ = false;
-    }else if (command_name == "wq") {
-        //保存并退出编辑器,若保存失败则提示错误
-        if (SaveBuffer()) {
-            running_ = false;
+            LeaveCommandLine(); //报错也需要退出命令行模式
         } else {
-            message_ = "Unknown command: " + command_name;
+            running_ = false;   //退出程序（马上会清屏，所以不用 LeaveCommandLine）
         }
+        return;
+    } 
+    
+    if (command_name == "q!" || command_name == "quit!") {
+        running_ = false;       //退出程序
+        return;
+    } 
+    
+    if (command_name == "wq") {
+        // 注意：如果 SaveBuffer 返回值不是 bool，直接调 SaveBuffer() 即可
+        // 根据你之前的截图，你可以这样保留：
+        SaveBuffer();
+        running_ = false;       //保存并退出程序
+        return;
     }
+
+    // 如果不属于上面任何命令，提示未知命令
+    message_ = "Unknown command: " + command_name;
+    LeaveCommandLine(); //报错后必须恢复模式
 }
+
 void Editor::LeaveCommandLine() {
     //恢复Normal模式并清空正在输入的命令
     mode_ = Mode::Normal;
