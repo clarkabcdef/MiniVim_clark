@@ -112,17 +112,20 @@ void Buffer::SaveAs(const std::filesystem::path& path) {
 
 
 void Buffer::WriteTo(const std::filesystem::path& path) const {
-   std::ofstream ofs(path);
-   if (!ofs.is_open()) {
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs.is_open()) {
         throw std::runtime_error("Failed to open file for writing: " + path.string());
     }
     
-    //只补齐行之间的换行，最后一行绝不乱加换行，完全保持 lines_ 的原始状态
+    // 如果是一个空文件（只包含一个空字符串），直接返回，不写入任何字节
+    // 这可以防止空文件在保存时被意外写入一个 '\n'
+    if (lines_.size() == 1 && lines_[0].empty()) {
+        return;
+    }
+
+    // 根据助教要求，每行后面都跟一个换行符
     for (std::size_t i = 0; i < lines_.size(); ++i) {
-        ofs << lines_[i];
-        if (i + 1 < lines_.size()) {
-            ofs << '\n';
-        }
+        ofs << lines_[i] << '\n';
     }
 }
 } // namespace sjtu
