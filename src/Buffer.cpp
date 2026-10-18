@@ -5,20 +5,20 @@
 namespace sjtu {
 
 Buffer::Buffer(const std::filesystem::path& path){
-    //从path指向的文件构造Buffer,你需要打开文件并且把文件内容填充进Buffer,并正确初始化一些状态.
-    //注意path可能为空的边界情况
     if (path.empty()) {
-        //如果path为空,则表示新建一个空文件,此时lines_应该包含一个空的string作为占位
-        lines_.push_back("");//或emplace_back("")
+        lines_.push_back("");
     } else {
-        //如果path不为空,则表示打开一个已有的文件,此时需要读取文件内容并填充进lines_
         std::ifstream file(path);
         if (!file.is_open()) {
-            throw std::runtime_error("Failed to open file: " + path.string());
-        }
-        std::string line;
-        while (std::getline(file, line)) {
-            lines_.push_back(line);
+            lines_.push_back("");
+        } else {
+            std::string line;
+            while (std::getline(file, line)) {
+                lines_.push_back(line);
+            }
+            if (lines_.empty()) {
+                lines_.push_back("");
+            }
         }
     }
 }
@@ -112,14 +112,14 @@ void Buffer::SaveAs(const std::filesystem::path& path) {
 
 
 void Buffer::WriteTo(const std::filesystem::path& path) const {
-   //实际将缓冲区中的内容写入path指向的文件中
-   std::ofstream ofs(path);//打开path,如果文件不存在则创建,如果存在则覆盖
-    //ofs就像连接line和内存间的管道
-   if (!ofs.is_open()) {
+    std::ofstream ofs(path); 
+    if (!ofs.is_open()) {
         throw std::runtime_error("Failed to open file for writing: " + path.string());
     }
-    for (const auto& line : lines_) {//for (循环变量说明 : 容器) {}
-        ofs << line << '\n'; //写入每行内容并添加换行符
+    
+    // 按照助教要求，每一行后面都加上换行符
+    for (const auto& line : lines_) {
+        ofs << line << '\n';
     }
 }
 
