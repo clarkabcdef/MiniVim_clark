@@ -112,15 +112,20 @@ void Buffer::SaveAs(const std::filesystem::path& path) {
 
 
 void Buffer::WriteTo(const std::filesystem::path& path) const {
-    std::ofstream ofs(path); 
+    std::ofstream ofs(path, std::ios::binary); // 建议开启 binary 防止被操作系统干扰
     if (!ofs.is_open()) {
         throw std::runtime_error("Failed to open file for writing: " + path.string());
     }
     
-    // 按照助教要求，每一行后面都加上换行符
-    for (const auto& line : lines_) {
-        ofs << line << '\n';
+    // 按照 Linux 约定与 Vim 的行为：
+    // 1. 非最后一行，正常输出内容 + 换行。
+    // 2. 是最后一行，如果该行不为空，也输出内容 + 换行（满足助教的要求）。
+    // 3. 是最后一行，且为空字符串（说明文件本身就以换行结尾，或者本来是空文件），则不再追加换行。
+    for (std::size_t i = 0; i < lines_.size(); ++i) {
+        ofs << lines_[i];
+        if (i + 1 < lines_.size() || !lines_[i].empty()) {
+            ofs << '\n';
+        }
     }
 }
-
 } // namespace sjtu
