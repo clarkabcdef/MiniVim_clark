@@ -225,14 +225,14 @@ void Editor::ExecuteCommandLine() {
             SaveBuffer(std::filesystem::path(command_argument));
             return;
         }
-    } else if (command_name == "q") {
+    } else if (command_name == "q" || command_name == "quit") {
         //退出编辑器,若文件被修改过则提示错误
         if (buffer_.IsModified()) {
             message_ = "File has changed. Use :wq to save and quit.";
         }else{
             running_ = false;
         }
-    } else if (command_name == "q!") {
+    } else if (command_name == "q!" || command_name == "quit!") {
         //强制退出编辑器,不检查文件是否被修改
         running_ = false;
     }else if (command_name == "wq") {
@@ -244,7 +244,6 @@ void Editor::ExecuteCommandLine() {
         }
     }
 }
-
 void Editor::LeaveCommandLine() {
     //恢复Normal模式并清空正在输入的命令
     mode_ = Mode::Normal;
